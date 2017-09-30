@@ -2,17 +2,18 @@ package ml.kmeans;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
-import org.la4j.Vector;
-
+import la.MatrixOperations;
+import la.VectorOperations;
 import ml.base.FeatureSet;
 
 public class KMeans
 {
-	public List<Vector> initCentroids(int K, FeatureSet feature)
+	public List<double[]> initCentroids(int K, FeatureSet feature)
 	{
-		List<Vector> result = new ArrayList<Vector>();
+		List<double[]> result = new ArrayList<double[]>();
 		Random rand = new Random();
 
 		for (int i = 0; i < K; i++)
@@ -26,7 +27,7 @@ public class KMeans
 
 	public KMeansResult train(int K, int repeats, FeatureSet X)
 	{
-		List<Vector> my = initCentroids(K, X);
+		List<double[]> my = initCentroids(K, X);
 		ClosestResult r = null;
 
 		for (int i = 0; i < repeats; i++)
@@ -39,36 +40,36 @@ public class KMeans
 		return new KMeansResult(r.cy, my, r.J);
 	}
 
-	private List<Vector> cumputeCentroidMeans(FeatureSet featureSet, List<Integer> cy, int k)
+	private List<double[]> cumputeCentroidMeans(FeatureSet featureSet, List<Integer> cy, int k)
 	{
 		int count = featureSet.getExampleSize();
-		List<Vector> centroids = new ArrayList<Vector>(k);
-		List<Integer> centroidAssCount = new ArrayList(k);
+		List<double[]> centroids = new ArrayList<double[]>(k);
+		List<Integer> centroidAssCount = new ArrayList<Integer>(k);
 
 		for (int x = 0; x < k; x++)
 		{
-			centroids.add(Vector.zero(featureSet.getExample(0).length()));
+			centroids.add(VectorOperations.zeros(featureSet.getExample(0).length));
 			centroidAssCount.add(0);
 		}
 
 		for (int m = 0; m < count; m++)
 		{
 			int centroidIdx = cy.get(m);
-			Vector example = featureSet.getExample(m);
+			double[] example = featureSet.getExample(m);
 
 			centroidAssCount.set(centroidIdx, centroidAssCount.get(centroidIdx) + 1);
-			centroids.set(centroidIdx, centroids.get(centroidIdx).add(example));
+			centroids.set(centroidIdx, VectorOperations.add(centroids.get(centroidIdx),example));
 		}
 
 		for (int i = 0; i < k; i++)
 		{
-			centroids.set(i, centroids.get(i).divide(centroidAssCount.get(i)));
+			centroids.set(i, VectorOperations.divide(centroids.get(i),centroidAssCount.get(i)));
 		}
 
 		return centroids;
 	}
 
-	private ClosestResult findClosestCentroids(FeatureSet X, List<Vector> my)
+	private ClosestResult findClosestCentroids(FeatureSet X, List<double[]> my)
 	{
 		int count = X.getExampleSize();
 		List<Integer> assignments = new ArrayList<Integer>(count);
@@ -81,14 +82,13 @@ public class KMeans
 
 		for (int i = 0; i < count; i++)
 		{
-			Vector example = X.getExample(i);
+			double[] example = X.getExample(i);
 			double min = Double.MAX_VALUE;
 			for (int y = 0; y < my.size(); y++)
 			{
-				Vector centroid = my.get(y);
-				Vector diff = example.subtract(centroid);
-				diff.update((c, v) -> v * v);
-				double dist = diff.sum();
+				double[] centroid = my.get(y);
+				double[] diff = VectorOperations.subtract(example,centroid,MatrixOperations.POW2);
+				double dist = VectorOperations.sum(diff);
 
 				if (dist < min)
 				{

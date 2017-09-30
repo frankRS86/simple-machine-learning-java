@@ -2,7 +2,6 @@ package ml.kmeans;
 
 import java.util.List;
 
-import org.la4j.Vector;
 
 public class KMeansResult
 {
@@ -12,12 +11,12 @@ public class KMeansResult
 	public List<Integer> assignemnts;
 
 	// the final centroid vectors
-	public List<Vector> centroids;
+	public List<double[]> centroids;
 
 	// the overall cost for this result
 	public double J;
 
-	public KMeansResult(List<Integer> assignemnts, List<Vector> centroids, double J)
+	public KMeansResult(List<Integer> assignemnts, List<double[]> centroids, double J)
 	{
 		super();
 		this.assignemnts = assignemnts;

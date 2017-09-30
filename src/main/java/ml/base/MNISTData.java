@@ -1,127 +1,134 @@
 package ml.base;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
-public class MNISTData
-{
-	private String labelFileName;
-	private String imageFileName;
+
+public class MNISTData {
+
+	private int numLabels = 0;
+	private int numImages = 0;
+	private int numRows = 0;
+	private int numCols = 0;
+	private FeatureSet data = null;
+
+	public MNISTData(String labelFilename, String imageFilename,int divident) {
+		try {
+			DataInputStream labels = new DataInputStream(new FileInputStream(
+					labelFilename));
+			DataInputStream images = new DataInputStream(new FileInputStream(
+					imageFilename));
+			int magicNumber = labels.readInt();
+			if (magicNumber != 2049) {
+				System.out.println("ERROR");
+				return;
+			}
+			magicNumber = images.readInt();
+			if (magicNumber != 2051) {
+				System.out.println("ERROR");
+				return;
+			}
+			this.numLabels = labels.readInt();
+			this.numImages = images.readInt();
+			this.numRows = images.readInt();
+			this.numCols = images.readInt();
+			if (numLabels != numImages) {
+				StringBuilder str = new StringBuilder();
+				str.append("Image file and label file do not contain the same number of entries.\n");
+				str.append("  Label file contains: " + numLabels + "\n");
+				str.append("  Image file contains: " + numImages + "\n");
+				System.out.println("ERROR");
+				return;
+			}
+
+			byte[] labelsData = new byte[numLabels];
+			labels.read(labelsData);
+			int imageVectorSize = numCols * numRows;
+			byte[] imagesData = new byte[numLabels * imageVectorSize];
+			images.read(imagesData);
+			
+			this.data = new FeatureSet();
+			int imageIndex = 0;
+			System.out.println("reading images. image size = "+imageVectorSize);
+			
+			int max = this.numLabels/divident;
+			System.out.println("loading images: "+max);
+			double[][] d = new double [max][imageVectorSize];
+			double[][] l = new double [max][10];
+			
+			for(int i=0;i<max;i++) {
+				
+				if(i % 1000 == 0)
+				{
+					//System.out.println("reading image "+i);
+				}
+				
+				int label = labelsData[i];
+				
+				//List<Double> inputData = new LinkedList<Double>();
+				double[] inputData = new double[imageVectorSize];
+				for(int j=0;j<imageVectorSize;j++) {
+					inputData[j] = (((double)(imagesData[imageIndex++]&0xff))/255.0);
+				}
+				double[] idealData = new double[10];
+				for(int j = 0; j < 10;j++)
+				{
+					idealData[j] = (j==label?1.0:0.0);
+				}
+				d[i] = inputData;
+				l[i] = idealData;
+				//this.data.addExample(new FeatureVector("", Vector.fromCollection(idealData), inputData));
+			}
+			data.setFeatureMatrix(d);
+			data.setLabelMatrix(l);
+			System.out.println("finished parsing. closing streams");
+			
+			images.close();
+			labels.close();
+			
+
+		} catch (IOException ex) {
+			System.out.println("ERROR");
+			return;
+		}
+	}
 
 	/**
-	 * the following constants are defined as per the values described at
-	 * http://yann.lecun.com/exdb/mnist/
-	 **/
-
-	private static final int MAGIC_OFFSET = 0;
-	private static final int OFFSET_SIZE = 4; // in bytes
-
-	private static final int LABEL_MAGIC = 2049;
-	private static final int IMAGE_MAGIC = 2051;
-
-	private static final int NUMBER_ITEMS_OFFSET = 4;
-	private static final int ITEMS_SIZE = 4;
-
-	private static final int NUMBER_OF_ROWS_OFFSET = 8;
-	private static final int ROWS_SIZE = 4;
-	public static final int ROWS = 28;
-
-	private static final int NUMBER_OF_COLUMNS_OFFSET = 12;
-	private static final int COLUMNS_SIZE = 4;
-	public static final int COLUMNS = 28;
-
-	private static final int IMAGE_OFFSET = 16;
-	private static final int IMAGE_SIZE = ROWS * COLUMNS;
-
-	public MNISTData(String labelFileName, String imageFileName)
-	{
-		this.labelFileName = labelFileName;
-		this.imageFileName = imageFileName;
+	 * @return the numLabels
+	 */
+	public int getNumLabels() {
+		return numLabels;
 	}
 
-	public List<DigitImage> loadDigitImages() throws IOException
-	{
-		List<DigitImage> images = new ArrayList<DigitImage>();
-
-		ByteArrayOutputStream labelBuffer = new ByteArrayOutputStream();
-		ByteArrayOutputStream imageBuffer = new ByteArrayOutputStream();
-
-		File f = new File(labelFileName);
-		File f2 = new File(imageFileName);
-		InputStream labelInputStream = new FileInputStream(f);
-		InputStream imageInputStream = new FileInputStream(f2);
-
-		int read;
-		byte[] buffer = new byte[16384];
-
-		while ((read = labelInputStream.read(buffer, 0, buffer.length)) != -1)
-		{
-			labelBuffer.write(buffer, 0, read);
-		}
-
-		labelBuffer.flush();
-
-		while ((read = imageInputStream.read(buffer, 0, buffer.length)) != -1)
-		{
-			imageBuffer.write(buffer, 0, read);
-		}
-
-		imageBuffer.flush();
-
-		byte[] labelBytes = labelBuffer.toByteArray();
-		byte[] imageBytes = imageBuffer.toByteArray();
-
-		byte[] labelMagic = Arrays.copyOfRange(labelBytes, 0, OFFSET_SIZE);
-		byte[] imageMagic = Arrays.copyOfRange(imageBytes, 0, OFFSET_SIZE);
-
-		if (ByteBuffer.wrap(labelMagic).getInt() != LABEL_MAGIC)
-		{
-			throw new IOException("Bad magic number in label file!");
-		}
-
-		if (ByteBuffer.wrap(imageMagic).getInt() != IMAGE_MAGIC)
-		{
-			throw new IOException("Bad magic number in image file!");
-		}
-
-		int numberOfLabels = ByteBuffer
-				.wrap(Arrays.copyOfRange(labelBytes, NUMBER_ITEMS_OFFSET, NUMBER_ITEMS_OFFSET + ITEMS_SIZE)).getInt();
-		int numberOfImages = ByteBuffer
-				.wrap(Arrays.copyOfRange(imageBytes, NUMBER_ITEMS_OFFSET, NUMBER_ITEMS_OFFSET + ITEMS_SIZE)).getInt();
-
-		if (numberOfImages != numberOfLabels)
-		{
-			throw new IOException("The number of labels and images do not match!");
-		}
-
-		int numRows = ByteBuffer
-				.wrap(Arrays.copyOfRange(imageBytes, NUMBER_OF_ROWS_OFFSET, NUMBER_OF_ROWS_OFFSET + ROWS_SIZE))
-				.getInt();
-		int numCols = ByteBuffer
-				.wrap(Arrays.copyOfRange(imageBytes, NUMBER_OF_COLUMNS_OFFSET, NUMBER_OF_COLUMNS_OFFSET + COLUMNS_SIZE))
-				.getInt();
-
-		if (numRows != ROWS && numRows != COLUMNS)
-		{
-			throw new IOException("Bad image. Rows and columns do not equal " + ROWS + "x" + COLUMNS);
-		}
-
-		for (int i = 0; i < numberOfLabels; i++)
-		{
-			int label = labelBytes[OFFSET_SIZE + ITEMS_SIZE + i];
-			byte[] imageData = Arrays.copyOfRange(imageBytes, (i * IMAGE_SIZE) + IMAGE_OFFSET,
-					(i * IMAGE_SIZE) + IMAGE_OFFSET + IMAGE_SIZE);
-
-			images.add(new DigitImage(label, imageData));
-		}
-
-		return images;
+	/**
+	 * @return the numImages
+	 */
+	public int getNumImages() {
+		return numImages;
 	}
+
+	/**
+	 * @return the numRows
+	 */
+	public int getNumRows() {
+		return numRows;
+	}
+
+	/**
+	 * @return the numCols
+	 */
+	public int getNumCols() {
+		return numCols;
+	}
+
+	/**
+	 * @return the data
+	 */
+	public FeatureSet getData() {
+		return data;
+	}
+	
+	
+
 }

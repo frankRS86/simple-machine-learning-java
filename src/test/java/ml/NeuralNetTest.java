@@ -10,7 +10,6 @@ import org.la4j.Matrix;
 import org.la4j.Vector;
 
 import ml.base.Computations;
-import ml.base.DigitImage;
 import ml.base.FeatureSet;
 import ml.base.FeatureVector;
 import ml.base.MNISTData;
@@ -231,61 +230,14 @@ public class NeuralNetTest
 		Assert.assertEquals(0, result.get(0), 0);
 	}
 
-	@Test
-	public void testMNISTData()
-	{
-		MNISTData data = new MNISTData("train-labels-idx1-ubyte", "train-images-idx3-ubyte");
-		try
-		{
-			List<DigitImage> images = data.loadDigitImages();
-
-			FeatureSet set = new FeatureSet();
-			GaussianNormal gaus = new GaussianNormal();
-
-			for (int i = 0; i < images.size() / 300; i++)
-			{
-				DigitImage image = images.get(i);
-				FeatureVector v = new FeatureVector("image" + i, Vector.constant(1, image.label),
-						Computations.toDoubleArray(image.imageData));
-				set.addExample(v);
-			}
-
-			gaus.init(set.getFeatureMatrix());
-			gaus.calculateP(set.getFeatureMatrix().getColumn(0), 0);
-			set.normalise();
-
-			NeuralNet nn = new NeuralNet(98, 25, 1);
-			nn.init();
-			nn.train(set, 1, 0.3, 1);
-
-			MNISTData test = new MNISTData("t10k-labels-idx1-ubyte", "t10k-images-idx3-ubyte");
-			List<DigitImage> testImages = test.loadDigitImages();
-
-			for (int i = 0; i < testImages.size() / 100; i++)
-			{
-				DigitImage testImage = testImages.get(i);
-				FeatureVector v = new FeatureVector("Testimage" + i, Vector.constant(1, testImage.label),
-						Computations.toDoubleArray(testImage.imageData));
-				Vector result = nn.predict(v);
-				System.out.println(
-						"Image " + v.getLabel() + " was predicated as " + result + ":" + v.getLabel().equals(result));
-
-			}
-
-		}
-		catch (IOException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+	
 
 	@Test
 	public void testSINSquare()
 	{
 		FeatureSet set = new FeatureSet();
 
-		for (double i = 0; i < 100; i += 0.1)
+		for (double i = 100; i >= 1; i -= 1)
 		{
 			double r = Math.pow(Math.sin(i), 2);
 			FeatureVector v = new FeatureVector("", Vector.constant(1, r), i);
@@ -297,10 +249,21 @@ public class NeuralNetTest
 			}
 		}
 
-		NeuralNet nn = new NeuralNet(1, 6, 1);
-		nn.init();
+		Matrix []thetas = new Matrix[2];
+		thetas[0] = Matrix.zero(6, 2);
+		thetas[0].setRow(0, Vector.fromCSV("-0.0301978661802996, 0.0220978991048748"));
+		thetas[0].setRow(1, Vector.fromCSV("-0.0744330053274071, -0.0419305908754190"));
+		thetas[0].setRow(2, Vector.fromCSV("0.0351604212524115, 0.117348300293215"));
+		thetas[0].setRow(3, Vector.fromCSV("-0.119134726918237, -0.0904233968933104"));
+		thetas[0].setRow(4, Vector.fromCSV("-0.0521069027160932, 0.0566104767279240"));
+		thetas[0].setRow(5, Vector.fromCSV("0.0332641427402728, -0.0824119151737186"));
+		
+		thetas[1] = Matrix.zero(1, 7);
+		thetas[1].setRow(0, Vector.fromCSV("-0.0156846212580728, 0.0797383723446572, -0.0336217052508423, -0.101702868588616, 0.0136621309777905, -0.0542567461866538, -0.0883068769656743"));
+		
+		NeuralNet nn = new NeuralNet(thetas);
 
-		nn.train(set, 10, 0.1, 0);
+		nn.train(set, 100, 0.1, 1);
 
 		Vector result = nn.predict(new FeatureVector("", null, 0));
 		result = nn.predict(new FeatureVector("", null, 1));

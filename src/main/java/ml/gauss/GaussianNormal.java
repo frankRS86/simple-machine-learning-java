@@ -1,13 +1,15 @@
 package ml.gauss;
 
-import org.la4j.Matrix;
-import org.la4j.Vector;
+import java.util.Optional;
+
+import la.MatrixOperations;
+import la.VectorOperations;
 
 public class GaussianNormal
 {
-	private Vector my;
+	private double[] my;
 
-	private Vector delta_square;
+	private double[] delta_square;
 
 	private double e;
 
@@ -16,39 +18,44 @@ public class GaussianNormal
 		this.e = e;
 	}
 
-	public void init(Matrix features)
+	public void init(double[][] features)
 	{
-		int m = features.rows();
+		int m = features.length;
 
-		Vector help = Vector.constant(m, 1);
-		my = features.transpose().multiply(help).divide(m);
+		double[] help = VectorOperations.ones(m);
+		MatrixOperations.multMxCV(MatrixOperations.transpose(features),help,2,Optional.of((v,i,j) -> v/m));
 
-		Matrix tmp = Matrix.zero(m, my.length());
+		double[][] tmp = new double[m][my.length];
 
 		for (int i = 0; i < m; i++)
 		{
-			tmp.setRow(i, my);
+			tmp[i] = my;
 		}
 
-		Matrix diff = features.subtract(tmp);
-		diff.update((i, j, v) -> v * v);
+		double[][] diff = MatrixOperations.subtract(features,tmp,Optional.of(MatrixOperations.POW2));
 
-		delta_square = Vector.zero(diff.columns());
-		for (int i = 0; i < diff.columns(); i++)
+		delta_square = new double[diff[0].length];
+		for (int i = 0; i < diff[0].length; i++)
 		{
-			delta_square.set(i, diff.getColumn(i).sum() / m);
+			double[] col = MatrixOperations.getColumn(diff,i);
+			double sum = VectorOperations.sum(col);
+			delta_square[i] =  sum / m;
 		}
 	}
 
-	public boolean isAnomaly(Vector vector)
+	/**
+	 * checks if a feature vector is an anomaly
+	 * @param vector
+	 * @return
+	 */
+	public boolean isAnomaly(double[] vector)
 	{
-		Vector diff = vector.subtract(my);
-		diff.update((c, v) -> v * v);
-		diff.update((i, v) -> v / (2 * delta_square.get(i)));
-		diff.update((i, v) -> (Math.exp(-v)) / (Math.sqrt(2 * Math.PI) * Math.sqrt(delta_square.get(i))));
-
-		double p = diff.product();
-
+		double []diff = VectorOperations.subtract(vector,my,MatrixOperations.POW2,
+				(v,i,j) -> v / (2 * delta_square[i]),
+				(v,i,j) -> (Math.exp(-v)) / (Math.sqrt(2 * Math.PI) * Math.sqrt(delta_square[i])));
+		
+		double p = VectorOperations.product(diff);
+		
 		return p < e;
 	}
 
@@ -70,24 +77,22 @@ public class GaussianNormal
 	 *            It does NOT represent the feature vector of one single
 	 *            training examples
 	 */
-	public Vector calculateP(Vector column, int featureIdx)
+	public double[] calculateP(double[] column, int featureIdx)
 	{
-		Vector ps = Vector.zero(column.length());
+		double ds = delta_square[featureIdx];
 
-		Vector diff = column.subtract(my.get(featureIdx));
-		diff.update((c, v) -> v * v);
+		double[] diff = VectorOperations.subtract(column,my[featureIdx],
+				MatrixOperations.POW2,
+				(v,i,j) -> v/(2*ds),
+				(v,i,j) -> (Math.exp(-v)) / (Math.sqrt(2 * Math.PI) * Math.sqrt(ds)));
 
-		double ds = delta_square.get(featureIdx);
-		ps = diff.divide(2 * ds);
-		ps.update((i, v) -> (Math.exp(-v)) / (Math.sqrt(2 * Math.PI) * Math.sqrt(ds)));
-
-		return ps;
+		return diff;
 	}
 
 	public double calculateP(double val, int featureIdx)
 	{
-		double ds = delta_square.get(featureIdx);
-		double m = my.get(featureIdx);
+		double ds = delta_square[featureIdx];
+		double m = my[featureIdx];
 
 		double eExp = Math.pow(val - m, 2) / (2 * ds);
 
@@ -96,12 +101,12 @@ public class GaussianNormal
 		return p;
 	}
 
-	public Vector getMy()
+	public double[] getMy()
 	{
 		return my;
 	}
 
-	public Vector getDeltaSquare()
+	public double[] getDeltaSquare()
 	{
 		return delta_square;
 	}

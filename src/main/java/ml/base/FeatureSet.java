@@ -1,97 +1,71 @@
 package ml.base;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
-import org.la4j.Matrix;
-import org.la4j.Vector;
+import com.sun.xml.internal.fastinfoset.sax.Features;
+
+import la.MatrixOperations;
 
 public class FeatureSet
 {
-	Matrix featureMatrix;
-
 	List<String> exampleIds;
 
-	List<Vector> ls;
-
-	// contains mean value of each column
-	Vector means;
-
-	// Contains the max value of each column
-	Vector max;
-
-	private Matrix labelMatrix;
+	public List<double[]> tmpVals = new ArrayList();
+	
+	public List<List<Double>> listVals = new ArrayList();
+	
+	public double[][] features;
+	
+	public double[][] labels;
 
 	public FeatureSet()
 	{
 		exampleIds = new ArrayList<String>();
 	}
 
-	/**
-	 * adds a feature vector, representing a single training example
-	 */
-	public void addExample(FeatureVector example)
-	{
-		Vector data = example.getFeatures();
-
-		if (exampleIds.size() > 0)
-		{
-			if (featureMatrix.columns() != data.length())
-				throw new IllegalArgumentException("vector size of new example does not match old examples");
-		}
-
-		exampleIds.add(0, example.getName());
-		Vector label = example.getLabel();
-		if (labelMatrix == null)
-		{
-			labelMatrix = Matrix.zero(1, label.length());
-			labelMatrix.setRow(0, label);
-		}
-		else
-		{
-			labelMatrix = labelMatrix.insertRow(0, label);
-		}
-
-		if (featureMatrix == null)
-		{
-			featureMatrix = Matrix.zero(1, data.length());
-			featureMatrix.setRow(0, data);
-			return;
-		}
-
-		featureMatrix = featureMatrix.insertRow(0, data);
-	}
-
-	/**
-	 * this overrwrites all previously added training sets
-	 */
-	public void setAllData()
-	{
-
-	}
 
 	public void normalise()
 	{
 		long start = System.currentTimeMillis();
 
-		for (int i = 0; i < featureMatrix.columns(); i++)
+		int m = features.length;
+		
+		for (int i = 0; i < features[0].length; i++)
 		{
-			Vector column = featureMatrix.getColumn(i);
-			double max = column.max();
-			double mean = column.sum() / column.length();
+			double []col = MatrixOperations.getColumn(features,i);
+			
+			double max = Double.MIN_VALUE;
+			double sum = 0.0;
+			for(int r = 0; r < col.length; r++)
+			{
+				if(col[r] > max)
+				{
+					max = col[r];
+				}
+				
+				sum+=col[r];
+			}
+			double mean = sum / (double)m;
 
-			Vector normalized = column.subtract(mean).divide(max);
+			for(int r = 0; r < col.length;r++)
+			{
+				col[r] = (col[r] - mean) / max;
+			}
 
-			featureMatrix.setColumn(i, normalized);
+			MatrixOperations.setColumn(features,col,i);
 		}
 
 		long end = System.currentTimeMillis();
 		System.out.println("normalization took ms:" + (end - start));
 	}
 
-	public Matrix getFeatureMatrix()
+	public double[][] getFeatures()
 	{
-		return featureMatrix;
+		return features;
 	}
 
 	public String getFeatureExampleName(int index)
@@ -105,21 +79,71 @@ public class FeatureSet
 
 	public int getExampleSize()
 	{
-		return featureMatrix.rows();
+		return features.length;
 	}
 
-	public Vector getExample(int idx)
+	public double[] getExample(int idx)
 	{
-		return featureMatrix.getRow(idx);
+		return features[idx];
 	}
 
-	public void setLabelMatrix(Matrix labels)
+	public double[][] getLabelMatrix()
 	{
-		this.labelMatrix = labels;
+		return labels;
 	}
 
-	public Matrix getLabelMatrix()
+	public void shuffle() 
 	{
-		return labelMatrix;
+		// If running on Java 6 or older, use `new Random()` on RHS here
+	    Random rnd = ThreadLocalRandom.current();
+	    for (int i = features.length - 1; i > 0; i--)
+	    {
+	      int index = rnd.nextInt(i + 1);
+	      double[] row = features[index];
+	      features[index] = features[i];
+	      features[i] = row;
+	    }
+	}
+	public void setLabelMatrix(double[][] d) 
+	{
+		labels = d;		
+	}
+
+	public void setFeatureMatrix(double[][] d) 
+	{
+		features = d;		
+	}
+
+	
+	public double[][] getFeatures(int from,int to)
+	{
+		int size = to - from;
+		double[][] f = new double[size][features[0].length];
+		System.arraycopy(features,from, f, 0, size);
+		return f;
+	}
+	
+	public double[][] getLabels(int from,int to)
+	{
+		int size = to - from;
+		double[][] f = new double[size][labels[0].length];
+		System.arraycopy(labels,from, f, 0, size);
+		return f;
+	}
+	
+	public FeatureSet[] split() 
+	{
+		double[][][] fsplit = MatrixOperations.split(features, 2);
+		double[][][] lsplit = MatrixOperations.split(labels, 2);
+		FeatureSet[] subsets = new FeatureSet[2];
+		subsets[0] = new FeatureSet();
+		subsets[0].features = fsplit[0];
+		subsets[0].labels = lsplit[0];
+		
+		subsets[1] = new FeatureSet();
+		subsets[1].features = fsplit[1];
+		subsets[1].labels = lsplit[1];
+		
+		return subsets;
 	}
 }

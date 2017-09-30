@@ -4,47 +4,43 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 
-import org.la4j.Matrix;
-import org.la4j.Vector;
 
+/**
+ * Copyright Frank Siller 2017
+ */
 public class Computations
 {
-	public static Vector insertInVectorFront(Vector orig, double val)
-	{
-		Vector withBias = Vector.constant(orig.length() + 1, val);
-		for (int i = 0; i < orig.length(); i++)
-		{
-			withBias.set(i + 1, orig.get(i));
-		}
-		return withBias;
-	}
-
 	public static double sigmoid(double z)
 	{
 		double g = 1.0 / (1.0 + Math.exp(-z));
 		return g;
 	}
-
-	public static Vector sigmoid(Vector z)
+	
+	public static double[] sigmoid(double[] v) 
 	{
-		z.update((c, v) -> Math.exp(-v));
-		Vector added = z.add(1.0);
-
-		Vector ones = Vector.constant(z.length(), 1);
-		ones.update((i, v) -> 1 / added.get(i));
-
-		return ones;
+		double[] C = new double[v.length];
+		for(int i = 0; i < v.length;i++)
+		{
+			C[i] = 1.0 / (Math.exp(-v[i]) + 1.0);
+		}
+		
+		return C;
 	}
-
-	public static Matrix sigmoid(Matrix z)
+	
+	public static int maxIndex(double[] v)
 	{
-		z.update((c, i, v) -> Math.exp(-v));
-		Matrix added = z.add(1.0);
-
-		Matrix ones = Matrix.constant(z.rows(), z.columns(), 1);
-		ones.update((i, j, v) -> 1 / added.get(i, j));
-
-		return ones;
+		double max = 0.0;
+		int idx = 0;
+		for (int i = 0; i < v.length;i++)
+		{
+			if(v[i] >= max)
+			{
+				max = v[i];
+				idx = i;
+			}			
+		}
+		return idx;
+		
 	}
 
 	public static double sigmoidGradient(double z)
@@ -53,19 +49,18 @@ public class Computations
 		double sg = g * (1 - g);
 		return sg;
 	}
-
-	public static Vector sigmoidGradient(Vector z)
-	{
-		Vector sg = sigmoid(z);
-		sg.update((i, v) -> v * (1 - v));
-		return sg;
-	}
-
-	public static Matrix sigmoidGradient(Matrix z)
-	{
-		Matrix sg = sigmoid(z);
-		sg.update((i, j, v) -> v * (1 - v));
-		return sg;
+	
+	public static double[] sigmoidGradient(double[] ds) {
+		
+		double[] C = new double[ds.length];
+		
+		for(int i = 0; i < ds.length;i++)
+		{
+			double v = sigmoid(ds[i]);
+			C[i] = v * (1-v);
+		}
+		
+		return C;
 	}
 
 	public static double round(double value, int places)
@@ -88,4 +83,22 @@ public class Computations
 		}
 		return doubles;
 	}
+
+	public static double[][] sigmoid(double[][] ds) {
+		
+		double [][]C = new double[ds.length][ds[0].length];
+		
+		for (int i = 0;i<ds.length;i++)
+		{
+			for(int j = 0; j < ds[0].length;j++)
+			{
+				C[i][j] = 1.0 / (Math.exp(-ds[i][j]) + 1.0);
+			}
+		}
+		return C;
+	}
+
+
+
+
 }
