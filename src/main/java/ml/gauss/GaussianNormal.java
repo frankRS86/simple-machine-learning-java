@@ -23,7 +23,7 @@ public class GaussianNormal
 		int m = features.length;
 
 		double[] help = VectorOperations.ones(m);
-		MatrixOperations.multMxCV(MatrixOperations.transpose(features),help,2,Optional.of((v,i,j) -> v/m));
+		my = MatrixOperations.multMxCV(MatrixOperations.transpose(features),help,2,Optional.of((v,i,j) -> v/m));
 
 		double[][] tmp = new double[m][my.length];
 

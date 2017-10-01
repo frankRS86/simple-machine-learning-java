@@ -146,4 +146,10 @@ public class FeatureSet
 		
 		return subsets;
 	}
+
+
+	public double[] getLabel(int i) {
+		
+		return labels[i];
+	}
 }

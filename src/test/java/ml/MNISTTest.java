@@ -25,12 +25,18 @@ public class MNISTTest
 		double bestAlpha = 0;
 		double bestLayerSize = 0;
 		
-		for(int layerSize = 80;layerSize < 200;layerSize+=10)
-		for (double alpha = 0.01; alpha < 1;alpha+=0.03)
+		int layerSize= 500;
+		int secondLayer = 200;
+		int thirdLayer = 100;
+		double alpha = 0.01;
+		
+		
+		//for(int layerSize = 200;layerSize < 400;layerSize+=10)
+		//for (double alpha = 0.01; alpha < 1;alpha+=0.03)
 		{
 		
-		System.out.println("training nn alpha: "+alpha+ "hiddenlayer size: "+layerSize);
-		NeuralNet nn = new NeuralNet(784, layerSize, 80, 10);
+		System.out.println("training nn alpha: "+alpha+ " hiddenlayer size: "+layerSize+" second layer"+secondLayer);
+		NeuralNet nn = new NeuralNet(784, layerSize, secondLayer,thirdLayer, 10);
 		nn.init();
 		double finalCost = nn.train(set, 200,alpha,0);
 		

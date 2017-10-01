@@ -3,7 +3,6 @@ package ml;
 import org.junit.Test;
 
 import ml.base.FeatureSet;
-import ml.base.FeatureVector;
 import ml.kmeans.KMeans;
 import ml.kmeans.KMeansResult;
 
@@ -13,47 +12,32 @@ public class KMeansTest
 	@Test
 	public void testSimpleExample()
 	{
-		FeatureVector f = new FeatureVector("11");
-		f.addFeature(1);
-		f.addFeature(1);
-
-		FeatureVector f2 = new FeatureVector("12");
-		f2.addFeature(1);
-		f2.addFeature(2);
-
-		FeatureVector f3 = new FeatureVector("21");
-		f3.addFeature(2);
-		f3.addFeature(1);
-
-		FeatureVector f4 = new FeatureVector("22");
-		f4.addFeature(2);
-		f4.addFeature(2);
-
-		FeatureVector f5 = new FeatureVector("1010");
-		f5.addFeature(10);
-		f5.addFeature(10);
-
-		FeatureVector f6 = new FeatureVector("1210");
-		f6.addFeature(12);
-		f6.addFeature(10);
-
-		FeatureVector f7 = new FeatureVector("1012");
-		f7.addFeature(10);
-		f7.addFeature(12);
-
-		FeatureVector f8 = new FeatureVector("1111");
-		f8.addFeature(11);
-		f8.addFeature(11);
+		double[][] m = new double[8][2];
+		m[0] = new double[]{1};
+		m[1] = new double[]{1};
+		m[2] = new double[]{2};
+		m[3] = new double[]{2};
+		
+		m[4] = new double[]{10};
+		m[5] = new double[]{12};
+		m[6] = new double[]{10};
+		m[7] = new double[]{11};
+		
+		double[][] l = new double[8][1];
+		l[0] = new double[]{0};
+		l[1] = new double[]{1};
+		l[2] = new double[]{2};
+		l[3] = new double[]{3};
+		
+		l[4] = new double[]{4};
+		l[5] = new double[]{5};
+		l[6] = new double[]{6};
+		l[7] = new double[]{7};
+		
 
 		FeatureSet s = new FeatureSet();
-		s.addExample(f3);
-		s.addExample(f7);
-		s.addExample(f5);
-		s.addExample(f);
-		s.addExample(f4);
-		s.addExample(f8);
-		s.addExample(f6);
-		s.addExample(f2);
+		s.setFeatureMatrix(m);
+		s.setLabelMatrix(l);
 
 		s.normalise();
 
@@ -64,12 +48,18 @@ public class KMeansTest
 
 		for (int i = 0; i < numCentroids; i++)
 		{
-			System.out.println(r.centroids.get(i));
+			double[] c = r.centroids.get(i);
+			System.out.print("centroid "+i+" ");
+			for(int j = 0; j < c.length;j++)
+			{
+				System.out.print(c[j]+" ");
+			}
+			System.out.println("");
 		}
 
 		for (int i = 0; i < r.assignemnts.size(); i++)
 		{
-			System.out.println("example " + s.getFeatureExampleName(i) + " assigned to " + r.assignemnts.get(i));
+			System.out.println("example " + s.getLabel(i)[0] + " assigned to " + r.assignemnts.get(i));
 		}
 
 	}

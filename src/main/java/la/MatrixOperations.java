@@ -53,12 +53,14 @@ public class MatrixOperations
 		{
 			threadCount = 1;
 		}
+		int partSize = m/threadCount;
+		int rest = m%threadCount;
 		
 		for(int i = 0;i < threadCount; i++)
-		{
-			int partSize = m/threadCount;
+		{		
 			border[i] = new int[]{i*partSize,(i+1)*partSize};
 		}
+		border[border.length-1][1] +=rest;
 		
 		List<Thread> threads = new ArrayList<Thread>();
 		

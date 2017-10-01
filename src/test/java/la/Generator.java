@@ -37,6 +37,20 @@ public class Generator {
 		
 		return A;
 	}
+	
+	public static double[][] createWithConstant(int m, int n,double val) 
+	{
+		double [][] A = new double[m][n];
+		for(int i = 0; i < A.length;i++)
+		{
+			for(int j = 0; j < n;j++)
+			{
+				A[i][j] = val;
+			}
+		}
+		
+		return A;
+	}
 
 	public static double[] createRow(int num) 
 	{
