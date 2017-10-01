@@ -27,7 +27,11 @@ public class FeatureSet
 		exampleIds = new ArrayList<String>();
 	}
 
-
+	/**
+	 * normalizes each feature to range -1 to 1
+	 * 
+	 * x = (x - mean) / max
+	 */
 	public void normalise()
 	{
 		long start = System.currentTimeMillis();

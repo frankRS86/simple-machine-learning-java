@@ -13,7 +13,6 @@ public class MNISTTest
 	@Test
 	public void testMNISTData()
 	{
-		
 		MNISTData data = new MNISTData("train-labels-idx1-ubyte", "train-images-idx3-ubyte",12);
 		FeatureSet set = data.getData();
 			
