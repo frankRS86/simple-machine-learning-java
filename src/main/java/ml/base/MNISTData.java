@@ -13,7 +13,7 @@ public class MNISTData {
 	private int numCols = 0;
 	private FeatureSet data = null;
 
-	public MNISTData(String labelFilename, String imageFilename,int divident) {
+	public MNISTData(String labelFilename, String imageFilename,int loadSize) {
 		try {
 			DataInputStream labels = new DataInputStream(new FileInputStream(
 					labelFilename));
@@ -52,7 +52,7 @@ public class MNISTData {
 			int imageIndex = 0;
 			System.out.println("reading images. image size = "+imageVectorSize);
 			
-			int max = this.numLabels/divident;
+			int max = loadSize;
 			System.out.println("loading images: "+max);
 			double[][] d = new double [max][imageVectorSize];
 			double[][] l = new double [max][10];

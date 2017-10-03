@@ -123,7 +123,7 @@ public class NeuralNet
 			System.out.println("time passed: "+min+"m ETA: "+(numIterations-i)*(min/i)+"m");
 			System.out.println("----------------------------------------------------------------------");
 			
-			if(Math.abs(diff) < 0.001 )
+			if(Math.abs(diff) < 0.0005 )
 			{
 				System.out.println("no significant cost difference");
 				break;
@@ -247,8 +247,43 @@ public class NeuralNet
 		this.epsilon = e;
 
 	}
+	
+	public CostResult calculateCost(double [][]X,double[][] Y, double lambda)
+	{
+		double[][] h = predict(X);
+		
+		int m = X.length;
+		
+		// COST FUNCTION
+		double[][] term1 = MatrixOperations.executeOnEachElement(h, MatrixOperations.LOG,(v,r,c)-> v * Y[r][c] );		
+		double[][] term2 = MatrixOperations.executeOnEachElement(h,MatrixOperations.SUBTRACTFROM1,
+				MatrixOperations.LOG,
+				(v,r,c)-> v * (1 - Y[r][c]) );
+		
+		double sum = MatrixOperations.addAndSum(term1,term2);
+		double J = -sum / (double)m;
+		
+		double reg_sum = 0.0;
+		for (int i = 0; i < thetas.length; i++)
+		{		
+			reg_sum += MatrixOperations.sliceandSum(thetas[i],0,Optional.of(MatrixOperations.POW2));
+		}
 
+		double reg = (lambda / (2.0 * (double)m)) * reg_sum;
+		double J_reg = J + reg;
+		
+		CostResult r = new CostResult();
+		r.h = h;
+		r.J = J_reg;
+		
+		return r;
+	}
 
+	/**
+	 * calculates the possibilities [0 - 1] for given feature vector
+	 * @param x
+	 * @return
+	 */
 	public double[] predict(double[] x) 
 	{
 		double[] XwithBias = VectorOperations.insertConstFirst(x,1.0);
@@ -264,6 +299,33 @@ public class NeuralNet
 		}
 
 		return h_tmp;
+	}
+	
+	/**
+	 * calculates the possibilities [0 - 1] for given test set
+	 * @param x
+	 * @return
+	 */
+	public double[][] predict(double[][] X) 
+	{
+		double[][] XwithBias = MatrixOperations.insertConstFirstCol(X,1.0);
+		
+		double[][] h_tmp = null;
+		for (int i = 0; i < thetas.length; i++)
+		{
+			double[][] transposed = MatrixOperations.transpose(thetas[i]);
+			h_tmp = MatrixOperations.mult(XwithBias, transposed,2,Optional.of(MatrixOperations.SIGMOID));
+
+			XwithBias = MatrixOperations.insertConstFirstCol(h_tmp,1.0);
+		}
+
+		return h_tmp;
+	}
+	
+	public static class CostResult
+	{
+		public double[][] h;
+		public double J;
 	}
 
 }

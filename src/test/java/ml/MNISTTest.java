@@ -7,13 +7,19 @@ import ml.base.FeatureSet;
 import ml.base.MNISTData;
 import ml.gauss.GaussianNormal;
 import ml.neuralnet.NeuralNet;
+import ml.neuralnet.NeuralNet.CostResult;
 
 public class MNISTTest 
 {
 	@Test
 	public void testMNISTData()
 	{
-		MNISTData data = new MNISTData("train-labels-idx1-ubyte", "train-images-idx3-ubyte",12);
+		int trainingSize = 10;
+		
+		for(int t = 100; t < 10000;t+=50)
+		{
+		
+		MNISTData data = new MNISTData("train-labels-idx1-ubyte", "train-images-idx3-ubyte",t);
 		FeatureSet set = data.getData();
 			
 		//needed?
@@ -24,10 +30,11 @@ public class MNISTTest
 		double bestAlpha = 0;
 		double bestLayerSize = 0;
 		
-		int layerSize= 500;
-		int secondLayer = 200;
+		int layerSize= 120;
+		int secondLayer = 50;
 		int thirdLayer = 100;
 		double alpha = 0.01;
+		double lambda = 20;
 		
 		
 		//for(int layerSize = 200;layerSize < 400;layerSize+=10)
@@ -35,31 +42,31 @@ public class MNISTTest
 		{
 		
 		System.out.println("training nn alpha: "+alpha+ " hiddenlayer size: "+layerSize+" second layer"+secondLayer);
-		NeuralNet nn = new NeuralNet(784, layerSize, secondLayer,thirdLayer, 10);
+		NeuralNet nn = new NeuralNet(784, layerSize, secondLayer, 10);
 		nn.init();
-		double finalCost = nn.train(set, 200,alpha,0);
+		double finalCost = nn.train(set, 500,alpha,lambda);
 		
 		System.out.println("training finished");
 
-		MNISTData test = new MNISTData("t10k-labels-idx1-ubyte", "t10k-images-idx3-ubyte",2);
+		MNISTData test = new MNISTData("t10k-labels-idx1-ubyte", "t10k-images-idx3-ubyte",10000);
 		FeatureSet testImages = test.getData();
 		double[][] labelsTest = testImages.getLabelMatrix();
 		double[][] featuresTest = testImages.features;
 
+		CostResult res = nn.calculateCost(featuresTest, labelsTest, lambda);
+		
 		int hits = 0;
-		for (int i = 0; i < featuresTest.length; i++)
+		for (int i = 0; i < res.h.length; i++)
 		{
-			double [] x = featuresTest[i];
+			double [] h = res.h[i];
 			double [] y = labelsTest[i];
-			
-			double [] h = nn.predict(x);
 			
 			int exp = Computations.maxIndex(y);
 			//System.out.println("img:"+exp);
-			int res = Computations.maxIndex(h);
+			int pred = Computations.maxIndex(h);
 			//System.out.println("pred:"+res);
 			
-			if(exp == res)
+			if(exp == pred)
 			{
 				hits++;
 			}
@@ -80,10 +87,13 @@ public class MNISTTest
 		}
 		
 		
-		System.out.println(hits+" hits!! = "+percent+"%");
-		System.out.println("best hits: "+bestHits+"% best cost: "+bestCost+" a: "+bestAlpha+" layer: "+bestLayerSize);
+		System.out.println(hits+" hits!! = "+percent+"% at triningsize: "+t);
+		System.out.println("best hits: "+bestHits+"% alpha: "+bestAlpha+" layer: "+bestLayerSize);
+		System.out.println("m = "+t+" J train: "+bestCost);
+		System.out.println("m = "+t+" J test: "+res.J);
 		System.out.println("-------------------------------------------------------------");
 		
 		}
+	}
 	}
 }
