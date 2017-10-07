@@ -155,4 +155,15 @@ public class VectorOperations
 		}
 		return sum;
 	}
+
+	public static double [] executeOnEachElement(double[] h, FollowupOperation follow) {
+		
+		int n = h.length;
+		double[] c = new double[n];
+		for(int i = 0; i < n; i++)
+		{
+			c[i] = follow.execute(h[i], i, i);
+		}
+		return c;
+	}
 }

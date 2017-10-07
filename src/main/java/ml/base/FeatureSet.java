@@ -12,6 +12,10 @@ import la.MatrixOperations;
 
 public class FeatureSet
 {
+	double [] means;
+	double [] maxs; 
+	double [] sigmas;
+	
 	List<String> exampleIds;
 
 	public List<double[]> tmpVals = new ArrayList();
@@ -59,6 +63,8 @@ public class FeatureSet
 			{
 				col[r] = (col[r] - mean) / max;
 			}
+			means[i] = mean;
+			maxs[i] = max;
 
 			MatrixOperations.setColumn(features,col,i);
 		}
@@ -66,6 +72,59 @@ public class FeatureSet
 		long end = System.currentTimeMillis();
 		System.out.println("normalization took ms:" + (end - start));
 	}
+	
+	/**
+	 * x = (x - mean) / stdDev
+	 * 
+	 * stdDev = sum(x - mean)/m
+	 * 
+	 */
+	public void normaliseStandardDeviation()
+	{
+		int n = features[0].length;
+		sigmas = new double[n];
+		means = new double[n];
+		
+		long start = System.currentTimeMillis();
+
+		int m = features.length;
+		
+		for (int i = 0; i < n; i++)
+		{
+			double []col = MatrixOperations.getColumn(features,i);
+			
+			double max = Double.MIN_VALUE;
+			double sum = 0.0;
+			for(int r = 0; r < col.length; r++)
+			{				
+				sum+=col[r];
+			}
+			double mean = sum / (double)m;
+
+			double stdDevSum = 0;
+			for(int r = 0; r < col.length;r++)
+			{
+				col[r] = (col[r] - mean);
+				stdDevSum += Math.pow(col[r],2);
+			}
+			
+			double stdDev = Math.sqrt(stdDevSum/ (double)m);
+			
+			for(int r = 0; r < col.length;r++)
+			{
+				col[r] = col[r] /stdDev;
+			}
+			
+			sigmas[i] = stdDev;
+			means[i] = mean;
+
+			MatrixOperations.setColumn(features,col,i);
+		}
+
+		long end = System.currentTimeMillis();
+		System.out.println("normalization took ms:" + (end - start));
+	}
+	
 
 	public double[][] getFeatures()
 	{
@@ -155,5 +214,18 @@ public class FeatureSet
 	public double[] getLabel(int i) {
 		
 		return labels[i];
+	}
+
+	public double[] normaliseStandradDeviation(double[] example) {
+		
+		int n = example.length;
+		double []c = new double[n];
+		
+		for(int i = 0; i < n;i++)
+		{
+			c[i] = (example[i] - means[i])/ sigmas[i];
+		}
+		
+		return c;
 	}
 }
